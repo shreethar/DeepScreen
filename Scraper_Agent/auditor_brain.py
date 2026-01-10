@@ -4,6 +4,12 @@ from openai import OpenAI
 import concurrent.futures
 import math
 from typing import List, Dict
+from dotenv import load_dotenv
+from pathlib import Path
+import os
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
 from utils import log_step
 
 class AuditorBrain:
@@ -12,7 +18,7 @@ class AuditorBrain:
         # text-heavy navigation logic, but you can swap this back to qwen-vl if you pass images.
         self.client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
-            api_key="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"
+            api_key=os.getenv("OPENROUTER_API_KEY")
         )
         self.model_name = model_name
         # Global limit for concurrent LLM calls
