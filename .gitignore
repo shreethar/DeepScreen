@@ -1,2 +1,7 @@
 .env
 .venv
+web
+.python-version
+main.py
+pyproject.toml
+uv.lock
