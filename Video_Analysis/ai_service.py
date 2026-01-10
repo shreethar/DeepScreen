@@ -17,7 +17,7 @@ def configure_genai():
             # Use medium.en for better fidelity (captures filler words more reliably)
             # device="cpu" forces it to run on your processor
             # compute_type="int8" makes it run faster on standard laptops
-            model = WhisperModel("large-v2", device="cpu", compute_type="int8")
+            model = WhisperModel("large-v2", device="cuda", compute_type="int8_float16")
             print("✅ Whisper model loaded successfully")
         except Exception as e:
             print(f"❌ Error loading Whisper: {e}")
