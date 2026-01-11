@@ -55,7 +55,16 @@ async def process_resume_files(files: List[UploadFile], jd_text: str, jd_data: d
 async def score_candidates(job_description: str = Form(...), files: List[UploadFile] = File(...)):
     print(f"🚀 Endpoint 1: Scoring {len(files)} resumes...")
     jd_data = parse_jd(job_description)
-    jd_summary = f"{jd_data.get('title')} ({jd_data.get('min_experience_years')}y exp)"
+    
+    # Handle optional fields and nested structure safely
+    # Schema doesn't have 'title', uses 'role_level'. Experience is nested.
+    role_level = jd_data.get('role_level', 'Unknown Role')
+    
+    min_exp = "0"
+    if jd_data.get('experience'):
+        min_exp = jd_data.get('experience', {}).get('min_years') or "0"
+        
+    jd_summary = f"{role_level} ({min_exp}y exp)"
     
     results = await process_resume_files(files, job_description, jd_data, jd_summary)
     
@@ -70,7 +79,14 @@ async def score_candidates(job_description: str = Form(...), files: List[UploadF
 async def rerank_candidates(job_description: str = Form(...), files: List[UploadFile] = File(...)):
     print(f"🚀 Endpoint 2: SPPR Reranking {len(files)} resumes...")
     jd_data = parse_jd(job_description)
-    jd_summary = f"{jd_data.get('title')} ({jd_data.get('min_experience_years')}y exp)"
+
+    # Handle optional fields and nested structure safely
+    role_level = jd_data.get('role_level', 'Unknown Role')
+    min_exp = "0"
+    if jd_data.get('experience'):
+        min_exp = jd_data.get('experience', {}).get('min_years') or "0"
+        
+    jd_summary = f"{role_level} ({min_exp}y exp)"
     
     # 1. Process & Score (Seed Sort)
     results = await process_resume_files(files, job_description, jd_data, jd_summary)
@@ -96,7 +112,14 @@ async def explain_candidate(
     print(f"🚀 Endpoint 3: Explaining {candidate_data.get('filename')}...")
     # Clean JD summary
     jd_data = parse_jd(job_description)
-    jd_summary = f"{jd_data.get('title')} ({jd_data.get('min_experience_years')}y exp)"
+    
+    # Handle optional fields and nested structure safely
+    role_level = jd_data.get('role_level', 'Unknown Role')
+    min_exp = "0"
+    if jd_data.get('experience'):
+        min_exp = jd_data.get('experience', {}).get('min_years') or "0"
+        
+    jd_summary = f"{role_level} ({min_exp}y exp)"
     
     reasoning = await generate_explanation(candidate_data, jd_summary)
     return {

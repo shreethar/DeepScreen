@@ -5,10 +5,12 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+load_dotenv('../.env')
 
-client = OpenAI(base_url=os.getenv("OPENAI_BASE_URL"), api_key=os.getenv("OPENAI_API_KEY"))
-
+client = OpenAI(
+    base_url=os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1"),
+    api_key=os.getenv("OPENROUTER_API_KEY")
+)
 # -----------------------------------
 # JSON Schema
 # -----------------------------------

@@ -5,10 +5,16 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+from pathlib import Path
 
-client = OpenAI(base_url=os.getenv("OPENAI_BASE_URL"), api_key=os.getenv("OPENAI_API_KEY"))
+# Robustly find .env file (one directory up from this script)
+env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
+client = OpenAI(
+    base_url=os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1"),
+    api_key=os.getenv("OPENROUTER_API_KEY")
+)
 # -----------------------------------
 # Job Description Schema
 # -----------------------------------
