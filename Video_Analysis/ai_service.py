@@ -1,5 +1,29 @@
-from faster_whisper import WhisperModel
 import os
+
+def _load_cuda_libs():
+    """
+    On Windows, ctranslate2 needs to find cuBLAS and cuDNN DLLs in the PATH.
+    We add them programmatically if the nvidia pip packages are installed.
+    """
+    if os.name == 'nt':
+        libs = ["nvidia.cublas", "nvidia.cudnn"]
+        for lib in libs:
+            try:
+                module = __import__(lib, fromlist=["*"])
+                # nvidia.cublas is a namespace package, so __file__ is None. 
+                # Use __path__ instead.
+                lib_path = list(module.__path__)[0]
+                
+                # The DLLs are in the 'bin' subdirectory
+                bin_path = os.path.join(lib_path, 'bin')
+                if bin_path not in os.environ["PATH"]:
+                    os.environ["PATH"] = bin_path + os.pathsep + os.environ["PATH"]
+            except Exception:
+                 # Libraries not installed or structure different, will fail later if CUDA is requested
+                 pass
+
+_load_cuda_libs()
+from faster_whisper import WhisperModel
 import time
 
 # Global model instance
