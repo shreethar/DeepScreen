@@ -9,3 +9,9 @@ web/node_modules/
 web/.next/
 web/out/
 *.stackdump
+
+# =========================
+# Python (Video_Analysis/)
+# =========================
+Video_Analysis/__pycache__/
+Video_Analysis/**/*.pyc
