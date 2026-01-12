@@ -18,7 +18,6 @@ client = OpenAI(
 MODEL = os.getenv("MODEL_NAME", "google/gemini-2.0-flash-001")
 
 # Detailed Schemas for deep structural analysis
-# Detailed Schemas for deep structural analysis
 RESUME_SCHEMA = {
     "type": "object",
     "properties": {
@@ -31,7 +30,8 @@ RESUME_SCHEMA = {
                 "type": "object",
                 "properties": {
                     "title": {"type": ["string", "null"]},
-                    "duration": {"type": ["number", "null"]},
+                    "company": {"type": ["string", "null"]},
+                    "date_range": {"type": ["string", "null"]},
                     "description": {"type": ["string", "null"]}
                 },
                 "required": ["title"]
@@ -44,7 +44,8 @@ RESUME_SCHEMA = {
                 "properties": {
                     "degree": {"type": ["string", "null"]},
                     "course": {"type": ["string", "null"]},
-                    "year": {"type": ["string", "null"]}
+                    "year": {"type": ["string", "null"]},
+                    "institution": {"type": ["string", "null"]}
                 }
             }
         },
@@ -126,8 +127,11 @@ def parse_jd(text: str) -> Dict:
 def parse_resume(text: str, jd_context: str, links: List[str]) -> Dict:
     """Parses resume with Skill Inference logic to auto-populate missing technical keywords."""
     system_instr = (
-        "You are a Technical Talent Auditor. Extract resume details. "
+        "You are a Technical Talent Auditor. Extract resume details into JSON. "
         "SKILL INFERENCE: If a technology (e.g. FastAPI) is in projects/experience but missing from skills array, you MUST add it to 'skills'. "
+        "RULES FOR DATES: Convert ALL dates to 'MonthName YYYY - MonthName YYYY'. "
+        "If currently working, use 'Present'. Do NOT calculate duration numbers. "
+        "RULES FOR EDUCATION: Split 'degree' (e.g. Bachelor's) and 'course' (e.g. Computer Science). "
         "Use detected links to enrich 'repo_link', 'live_link', or 'portfolio_url' if applicable. Detected links: " + str(links) + ". "
         "For experience duration, calculate in years (float). "
         "If portfolio URL is not found, return \"\". "
