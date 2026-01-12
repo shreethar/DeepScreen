@@ -74,7 +74,7 @@ async def score_candidates(job_description: str = Form(...), files: List[UploadF
     
     return qualified + rejected
 
-# Endpoint 2: Rerank with SPPR (Top 10)
+# Endpoint 2: Rerank with SPPR (Top 8)
 @app.post("/rerank-candidates/")
 async def rerank_candidates(job_description: str = Form(...), files: List[UploadFile] = File(...)):
     print(f"🚀 Endpoint 2: SPPR Reranking {len(files)} resumes...")

@@ -338,16 +338,16 @@ function HRCandidatesContent() {
         }
 
         setIsReranking(true)
-        const top10Candidates = [...candidates].sort((a, b) => b.overallScore - a.overallScore).slice(0, 10)
+        const top8Candidates = [...candidates].sort((a, b) => b.overallScore - a.overallScore).slice(0, 8)
 
-        if (top10Candidates.length === 0) {
+        if (top8Candidates.length === 0) {
             toast.warning("No candidates to rerank.")
             setIsReranking(false)
             return
         }
 
         toast.info("Refining top candidates...", {
-            description: `Reranking top ${top10Candidates.length} profiles...`,
+            description: `Reranking top ${top8Candidates.length} profiles...`,
         })
 
         try {
@@ -359,7 +359,7 @@ function HRCandidatesContent() {
             // This is slightly inefficient but safer for stateless approach.
 
             let fileCount = 0
-            for (const candidate of top10Candidates) {
+            for (const candidate of top8Candidates) {
                 if (candidate.resumeUrl) {
                     try {
                         const response = await fetch(`/api/proxy?url=${encodeURIComponent(candidate.resumeUrl)}`)
@@ -382,7 +382,7 @@ function HRCandidatesContent() {
             }
 
             // --- Call Rerank API ---
-            const rerankResponse = await fetch("http://127.0.0.1:8000/rerank-candidates/", {
+            const rerankResponse = await fetch("http://127.0.0.1:8002/rerank-candidates/", {
                 method: "POST",
                 body: rerankFiles,
             })
@@ -669,7 +669,7 @@ function HRCandidatesContent() {
                                 ) : (
                                     <>
                                         <Trophy className="mr-2 h-4 w-4" />
-                                        Rerank Top 10
+                                        Rerank Top 8
                                     </>
                                 )}
                             </Button>
