@@ -10,6 +10,9 @@ web/.next/
 web/out/
 *.stackdump
 
+web/.env.local
+serviceAccountKey.json
+
 # =========================
 # Python (Video_Analysis/)
 # =========================
@@ -18,3 +21,6 @@ Video_Analysis/**/*.pyc
 
 Resume_Ranking/__pycache__/
 Resume_Ranking/**/*.pyc
+
+Scraper_Agent/__pycache__/
+Scraper_Agent/**/*.pyc
