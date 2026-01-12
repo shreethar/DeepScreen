@@ -15,3 +15,6 @@ web/out/
 # =========================
 Video_Analysis/__pycache__/
 Video_Analysis/**/*.pyc
+
+Resume_Ranking/__pycache__/
+Resume_Ranking/**/*.pyc
