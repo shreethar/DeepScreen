@@ -28,7 +28,7 @@ class VideoFacialAnalyzer:
         base_options = python.BaseOptions(model_asset_path=model_path)
         options = vision.FaceLandmarkerOptions(
             base_options=base_options,
-            output_face_blendshapes=True, # Improved accuracy if we want to use blendshapes later
+            output_face_blendshapes=True,
             output_facial_transformation_matrixes=True,
             num_faces=1,
             min_face_detection_confidence=0.5,
@@ -40,12 +40,11 @@ class VideoFacialAnalyzer:
         # 3. Create Detector
         self.detector = vision.FaceLandmarker.create_from_options(options)
 
-        # Thresholds (Derived from Raqib's logic)
+        # Thresholds (Updated Calibration)
         self.EAR_THRESHOLD = 0.22       # Blink
         self.MAR_THRESHOLD = 0.45       # Smile
-        self.BROW_THRESHOLD = 0.30      # Stress
 
-        # 3D Model Points for Pose Estimation (Standard Human Face)
+        # 3D Model Points for Pose Estimation
         self.model_points = np.array([
             (0.0, 0.0, 0.0),             # Nose tip
             (0.0, -330.0, -65.0),        # Chin
@@ -56,9 +55,6 @@ class VideoFacialAnalyzer:
         ], dtype="double")
 
     def analyze_video(self, video_path, skip_frames=2):
-        """
-        Processes video and returns a dictionary of behavioral metrics.
-        """
         if not os.path.exists(video_path):
             print(f"Error: File {video_path} not found.")
             return None
@@ -68,11 +64,9 @@ class VideoFacialAnalyzer:
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         
-        # Metrics Containers
         blink_count = 0
         blink_active = False
         smile_frames = 0
-        stress_frames = 0
         
         gaze_scores = []
         pitch_history = []
@@ -87,28 +81,20 @@ class VideoFacialAnalyzer:
             if not ret: break
             
             frame_idx += 1
-            
-            # Skip frames optimization (Process every Nth frame)
-            if frame_idx % (skip_frames + 1) != 0:
-                continue
+            if frame_idx % (skip_frames + 1) != 0: continue
             
             processed_frames += 1
-            
-            # MediaPipe Image Object
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
-            
-            # Timestamp in ms required for VIDEO mode
             timestamp_ms = int((frame_idx / fps) * 1000)
             
-            # Detect
             detection_result = self.detector.detect_for_video(mp_image, timestamp_ms)
 
             if detection_result.face_landmarks:
                 frames_with_face += 1
-                landmarks = detection_result.face_landmarks[0] # List of NormalizedLandmark
+                landmarks = detection_result.face_landmarks[0]
                 
-                # 1. Head Pose
+                # 1. Head Pose (For Posture)
                 rot_vec, trans_vec = self._calculate_head_pose(landmarks, width, height)
                 pitch, yaw, _ = self._get_euler_angles(rot_vec, trans_vec)
                 pitch_history.append(pitch)
@@ -126,88 +112,71 @@ class VideoFacialAnalyzer:
                 else:
                     blink_active = False
                     
-                # 4. Smile Detection
+                # 4. Smile Detection (Amiability)
                 mar = self._calculate_mar(landmarks)
                 if mar > self.MAR_THRESHOLD:
                     smile_frames += 1
 
-                # 5. Stress Detection
-                brow_dist = self._calculate_brow_distance(landmarks)
-                if brow_dist < self.BROW_THRESHOLD:
-                    stress_frames += 1
-
         cap.release()
         
-        # --- Post-Processing ---
-        if processed_frames == 0:
+        if processed_frames == 0 or frames_with_face == 0:
             return None
 
-        # Calculate duration in minutes for rates
+        # --- REVISED CALCULATION LOGIC ---
         processed_duration_min = (processed_frames * (skip_frames + 1)) / fps / 60
-        if processed_duration_min == 0: processed_duration_min = 0.01
+        blink_rate = blink_count / (processed_duration_min if processed_duration_min > 0 else 0.01)
+        
+        # 1. Professional Posture (1.5 Multiplier - More forgiving)
+        pitch_std = np.std(pitch_history) if pitch_history else 0
+        yaw_std = np.std(yaw_history) if yaw_history else 0
+        movement_penalty = (pitch_std + yaw_std) * 1.5
+        posture_score = max(0, 100 - movement_penalty)
+        
+        # 2. Engagement Score (Gaze + Blink Integration)
+        avg_gaze_val = np.mean(gaze_scores) if gaze_scores else 0
+        engagement_score = self._calculate_engagement_metric(avg_gaze_val, blink_rate)
 
-        # Averages
-        avg_gaze = np.mean(gaze_scores) * 100 if gaze_scores else 0
-        avg_pitch = np.mean([abs(p) for p in pitch_history]) if pitch_history else 0
-        avg_yaw = np.mean([abs(y) for y in yaw_history]) if yaw_history else 0
-        
-        # Stability Score (Lower movement is better, capped at 100)
-        stability = max(0, 100 - (avg_yaw + avg_pitch))
-        
-        # Liveness (Variance in pitch indicates 3D movement vs static photo)
+        # 3. Liveness Check
         pitch_variance = np.var(pitch_history) if pitch_history else 0
-        is_live = True if pitch_variance > 0.5 else False
+        is_live = "PASS" if pitch_variance > 0.5 else "FAIL"
 
-        # Percentages (Calculated only on frames where face is present)
-        if frames_with_face > 0:
-            smile_pct = (smile_frames / frames_with_face) * 100
-            stress_pct = (stress_frames / frames_with_face) * 100
-        else:
-            smile_pct = 0
-            stress_pct = 0
-
-        blink_rate = blink_count / processed_duration_min
+        smile_pct = (smile_frames / frames_with_face) * 100
 
         return {
-            "liveness_status": "PASS" if is_live else "FAIL",
-            "eye_contact_score": float(avg_gaze),
-            "head_stability_score": float(stability),
+            "liveness_status": is_live,
+            "eye_contact_score": float(avg_gaze_val * 100),
+            "professional_posture": float(posture_score),
             "blink_rate_bpm": float(blink_rate),
-            "smile_percentage": float(smile_pct),
-            "stress_percentage": float(stress_pct)
+            "friendliness_score": float(smile_pct),
+            "engagement_score": float(engagement_score)
         }
 
-    # ================= HELPERS (Adapted for keys/attributes) =================
+    def _calculate_engagement_metric(self, gaze_score, blink_rate):
+        """Combines gaze and blink rate into one holistic metric."""
+        blink_penalty = abs(blink_rate - 17) * 2 
+        engagement = (gaze_score * 100) - blink_penalty
+        return max(0, min(100, engagement))
+
+    # --- HELPERS ---
     def _calculate_head_pose(self, lm, w, h):
-        # lm is a list of objects with .x, .y attributes
         image_points = np.array([
-            (lm[1].x * w, lm[1].y * h),     # Nose
-            (lm[152].x * w, lm[152].y * h), # Chin
-            (lm[33].x * w, lm[33].y * h),   # Left Eye
-            (lm[263].x * w, lm[263].y * h), # Right Eye
-            (lm[61].x * w, lm[61].y * h),   # Left Mouth
-            (lm[291].x * w, lm[291].y * h)  # Right Mouth
+            (lm[1].x * w, lm[1].y * h), (lm[152].x * w, lm[152].y * h),
+            (lm[33].x * w, lm[33].y * h), (lm[263].x * w, lm[263].y * h),
+            (lm[61].x * w, lm[61].y * h), (lm[291].x * w, lm[291].y * h)
         ], dtype="double")
         camera_matrix = np.array([[w, 0, w / 2], [0, w, h / 2], [0, 0, 1]], dtype="double")
-        dist_coeffs = np.zeros((4, 1))
-        _, rotation_vector, translation_vector = cv2.solvePnP(
-            self.model_points, image_points, camera_matrix, dist_coeffs
-        )
-        return rotation_vector, translation_vector
+        _, rot_vec, trans_vec = cv2.solvePnP(self.model_points, image_points, camera_matrix, np.zeros((4, 1)))
+        return rot_vec, trans_vec
 
     def _get_euler_angles(self, rotation_vector, translation_vector):
         rmat, _ = cv2.Rodrigues(rotation_vector)
         pose_mat = np.hstack((rmat, translation_vector))
-        euler_angles = cv2.decomposeProjectionMatrix(pose_mat)[6]
-        return [x[0] for x in euler_angles]
+        return [x[0] for x in cv2.decomposeProjectionMatrix(pose_mat)[6]]
 
     def _calculate_gaze_score(self, lm):
-        l_width = (lm[133].x - lm[33].x)
-        l_pos = (lm[468].x - lm[33].x) / l_width if l_width > 0 else 0
-        r_width = (lm[263].x - lm[362].x)
-        r_pos = (lm[473].x - lm[362].x) / r_width if r_width > 0 else 0
-        avg_pos = (l_pos + r_pos) / 2.0
-        score = 1 - (abs(0.5 - avg_pos) * 3) 
+        l_pos = (lm[468].x - lm[33].x) / (lm[133].x - lm[33].x) if (lm[133].x - lm[33].x) > 0 else 0
+        r_pos = (lm[473].x - lm[362].x) / (lm[263].x - lm[362].x) if (lm[263].x - lm[362].x) > 0 else 0
+        score = 1 - (abs(0.5 - ((l_pos + r_pos) / 2.0)) * 3)
         return max(0, min(1, score))
 
     def _calculate_ear(self, lm):
@@ -215,15 +184,9 @@ class VideoFacialAnalyzer:
         v2 = np.linalg.norm(np.array([lm[386].x, lm[386].y]) - np.array([lm[374].x, lm[374].y]))
         h1 = np.linalg.norm(np.array([lm[33].x, lm[33].y]) - np.array([lm[133].x, lm[133].y]))
         h2 = np.linalg.norm(np.array([lm[362].x, lm[362].y]) - np.array([lm[263].x, lm[263].y]))
-        if h1 == 0 or h2 == 0: return 0
-        return (v1/h1 + v2/h2) / 2.0
+        return (v1/h1 + v2/h2) / 2.0 if h1 > 0 and h2 > 0 else 0
 
     def _calculate_mar(self, lm):
         v = np.linalg.norm(np.array([lm[13].x, lm[13].y]) - np.array([lm[14].x, lm[14].y]))
         h = np.linalg.norm(np.array([lm[61].x, lm[61].y]) - np.array([lm[291].x, lm[291].y]))
         return v / h if h > 0 else 0
-
-    def _calculate_brow_distance(self, lm):
-        brow_dist = np.linalg.norm(np.array([lm[66].x, lm[66].y]) - np.array([lm[159].x, lm[159].y]))
-        eye_height = np.linalg.norm(np.array([lm[159].x, lm[159].y]) - np.array([lm[145].x, lm[145].y]))
-        return brow_dist / eye_height if eye_height > 0 else 0
