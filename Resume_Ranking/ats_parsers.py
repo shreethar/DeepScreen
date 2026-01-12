@@ -7,8 +7,7 @@ from jsonschema import validate
 from openai import OpenAI, RateLimitError
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).resolve().parent
-load_dotenv(BASE_DIR / ".env")
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 client = OpenAI(
     base_url=os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1"),
