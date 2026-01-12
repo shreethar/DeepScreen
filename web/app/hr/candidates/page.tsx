@@ -143,8 +143,12 @@ function HRCandidatesContent() {
                                 ? data.layer2.extractedData.education.map((e: any) => `${e.degree} - ${e.course} \n(${e.year})`).join("\n\n")
                                 : 0,
                             keywordMatch: data.layer2?.semanticScore ? Math.round(data.layer2.semanticScore * 100) : 0,
-                            skillSimilarity: data.layer2?.semanticScore ? Math.round(data.layer2.semanticScore * 100) : 0, // Approx
-                            descriptionFocus: data.layer2?.semanticScore ? Math.round(data.layer2.semanticScore * 100) : 0, // Approx
+                            skillSimilarity: data.layer2?.breakdown?.semantic?.skill_similarity
+                                ? Math.round(data.layer2.breakdown.semantic.skill_similarity * 100)
+                                : (data.layer2?.semanticScore ? Math.round(data.layer2.semanticScore * 100) : 0),
+                            descriptionFocus: data.layer2?.breakdown?.semantic?.description_focus_similarity
+                                ? Math.round(data.layer2.breakdown.semantic.description_focus_similarity * 100)
+                                : (data.layer2?.semanticScore ? Math.round(data.layer2.semanticScore * 100) : 0),
                             extractedData: {
                                 ...data.layer2?.extractedData,
                                 portfolio_url: data.layer2?.extractedData?.portfolio_url
@@ -298,8 +302,8 @@ function HRCandidatesContent() {
                         ...result.extracted_data,
                         experience: Array.isArray(result.extracted_data.experience)
                             ? result.extracted_data.experience.map((exp: any) => ({
-                                title: exp.title,
-                                duration: exp.duration,
+                                title: exp.title || "Unknown Role",
+                                duration: exp.duration || 0,
                                 focus: exp.focus || exp.description || ""
                             }))
                             : []
@@ -307,7 +311,8 @@ function HRCandidatesContent() {
 
                     updateDoc(docRef, {
                         "layer2.semanticScore": matchScore / 100,
-                        "layer2.extractedData": sanitizedExtractedData
+                        "layer2.extractedData": sanitizedExtractedData,
+                        "layer2.breakdown": result.breakdown || null
                     }).catch(e => console.error("Firestore update failed", e))
                 }
             }
