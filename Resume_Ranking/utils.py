@@ -2,9 +2,50 @@
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+from datetime import datetime
 
 # Load model once
 model = SentenceTransformer('all-MiniLM-L6-v2')
+
+def calculate_years_from_ranges(experience_list):
+    """
+    Parses 'MonthName YYYY - MonthName YYYY' strings from the experience list
+    and calculates the total years of experience as a float.
+    """
+    total_months = 0
+    if not experience_list:
+        return 0.0
+    
+    for item in experience_list:
+        # Get date_range (or fallback to empty string)
+        date_range = item.get("date_range", "")
+        if not date_range or " - " not in date_range:
+            continue
+            
+        try:
+            start_str, end_str = date_range.split(" - ")
+            
+            # Parse Start Date (e.g., "January 2023")
+            start_date = datetime.strptime(start_str.strip(), "%B %Y")
+            
+            # Parse End Date
+            if end_str.strip().lower() == "present":
+                end_date = datetime.now()
+            else:
+                end_date = datetime.strptime(end_str.strip(), "%B %Y")
+            
+            # Calculate months difference
+            months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
+            
+            # Add to total (ensure no negative values)
+            if months > 0:
+                total_months += months
+                
+        except Exception as e:
+            # Silently fail for bad date formats, just skip this entry
+            continue
+
+    return round(total_months / 12, 2)
 
 def parse_degree_rank(degree_str):
     """
@@ -36,7 +77,16 @@ def calculate_rule_based_score(candidate_data, job_data):
     """
     scores = {}
     is_qualified = True
-    
+
+    # Handle data structure (support both 'sections' wrapper and flat structure)
+    # If candidate_data has 'experience' directly, use it. Otherwise check 'sections'.
+    if 'education' in candidate_data:
+        cand_edu_list = candidate_data.get('education', [])
+        experiences = candidate_data.get('experience', [])
+    else:
+        cand_edu_list = candidate_data.get('sections', {}).get('education', [])
+        experiences = candidate_data.get('sections', {}).get('experience', [])
+
     # 1. Degree Check (Hard Rule)
     # JD education requirement
     jd_edu = job_data.get('education', {})
@@ -69,17 +119,8 @@ def calculate_rule_based_score(candidate_data, job_data):
         
     # 2. Experience Check (Hard Rule)
     min_exp = job_data.get('min_experience_years', 0)
-    
-    # Calculate total duration from all experiences
-    experiences = candidate_data.get('sections', {}).get('experience', [])
-    total_yoe = 0.0
-    for exp in experiences:
-        # Assuming duration is a string number like "2" or "2.5"
-        try:
-            dur = float(exp.get('duration', 0))
-            total_yoe += dur
-        except (ValueError, TypeError):
-            pass
+
+    total_yoe = calculate_years_from_ranges(experiences)
             
     scores['total_experience_years'] = total_yoe
     
