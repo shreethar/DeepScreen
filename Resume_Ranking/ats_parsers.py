@@ -144,7 +144,7 @@ def parse_resume(text: str, jd_context: str, links: List[str]) -> Dict:
         "RULES FOR DATES: Convert ALL dates to 'MonthName YYYY - MonthName YYYY'. "
         "If currently working, use 'Present'. "
         "RULES FOR EDUCATION: Split 'degree' (e.g. Bachelor's) and 'course' (e.g. Computer Science). "
-        "If a job mentions either of 2 degrees (e.g. Bachelor's or Master's), return the lowest degree. (e.g. in this case Bachelor's)"
+        "If the resume mentions MSc that is Masters and if it mentions BSc, that is Bachelor's. "
         "Use detected links to enrich 'repo_link', 'live_link', or 'portfolio_url' if applicable. Detected links: " + str(links) + ". "
         "CALCULATE DURATION: For each experience entry, calculate the duration in years (float) locally and populate the 'duration' field. "
         "If portfolio URL is not found, return \"\". "

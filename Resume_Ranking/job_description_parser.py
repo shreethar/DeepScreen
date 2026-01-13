@@ -121,6 +121,9 @@ INSTRUCTIONS:
    - Do NOT include implied or optional skills, even if important.
    - Do NOT negate them — your system will check for their absence.
 
+6. **Education**: 
+   - If a job mentions either of 2 degrees (e.g. Bachelor's or Master's), return the lowest degree. (e.g. in this case Bachelor's) 
+
 
 RULES:
 - NEVER invent skills. Only extract or reasonably infer from context.
