@@ -120,14 +120,20 @@ def get_audio_duration(audio_path: str) -> float:
     Get audio duration in seconds using librosa.
     """
     try:
-        import librosa
+
+        import wave
+        import contextlib
+        
         # Verify file exists and is not empty
         if not os.path.exists(audio_path) or os.path.getsize(audio_path) == 0:
             print("Audio file is missing or empty.")
             return 0.0
             
-        y, sr = librosa.load(audio_path, sr=None)
-        duration = librosa.get_duration(y=y, sr=sr)
+        with contextlib.closing(wave.open(audio_path, 'r')) as f:
+            frames = f.getnframes()
+            rate = f.getframerate()
+            duration = frames / float(rate)
+            
         print(f"Audio duration: {duration:.2f} seconds")
         return duration
     except Exception as e:

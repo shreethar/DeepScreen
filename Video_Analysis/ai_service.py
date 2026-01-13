@@ -41,11 +41,18 @@ def configure_genai():
             # Use medium.en for better fidelity (captures filler words more reliably)
             # device="cpu" forces it to run on your processor
             # compute_type="int8" makes it run faster on standard laptops
+            print("Attempting to load Whisper model with CUDA...")
             model = WhisperModel("large-v2", device="cuda", compute_type="int8_float16")
-            print("✅ Whisper model loaded successfully")
+            print("✅ Whisper model loaded successfully (CUDA)")
         except Exception as e:
-            print(f"❌ Error loading Whisper: {e}")
-            raise e
+            print(f"⚠️ CUDA load failed: {e}")
+            print("Falling back to CPU...")
+            try:
+                model = WhisperModel("large-v2", device="cpu", compute_type="int8")
+                print("✅ Whisper model loaded successfully (CPU)")
+            except Exception as cpu_error:
+                print(f"❌ Error loading Whisper on CPU: {cpu_error}")
+                raise cpu_error
 
 def transcribe_audio(audio_path: str):
     """

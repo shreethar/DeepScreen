@@ -142,12 +142,20 @@ class VideoFacialAnalyzer:
 
         smile_pct = (smile_frames / frames_with_face) * 100
 
+        # 4. Stress Calculation (Heuristic: High blink + excessive head movement)
+        stress_score = 0
+        if blink_rate > 20: stress_score += 30
+        if movement_penalty > 30: stress_score += 30
+        if avg_gaze_val < 0.4: stress_score += 20
+        stress_percentage = min(100, stress_score)
+
         return {
             "liveness_status": is_live,
             "eye_contact_score": float(avg_gaze_val * 100),
-            "professional_posture": float(posture_score),
+            "head_stability_score": float(posture_score),
             "blink_rate_bpm": float(blink_rate),
-            "friendliness_score": float(smile_pct),
+            "smile_percentage": float(smile_pct),
+            "stress_percentage": float(stress_percentage),
             "engagement_score": float(engagement_score)
         }
 
