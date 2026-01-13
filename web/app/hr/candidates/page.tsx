@@ -35,8 +35,11 @@ function getScoreColor(score: number) {
 function getStatusConfig(status: string) {
     const configs: Record<string, { color: string; label: string }> = {
         pending: { color: "#F59E0B", label: "Pending" },
-        reviewed: { color: "#3B82F6", label: "Reviewed" },
+        screened: { color: "#8B5CF6", label: "Screened" },
         shortlisted: { color: "#10B981", label: "Shortlisted" },
+        interviewed: { color: "#3B82F6", label: "Interviewed" },
+        offer_sent: { color: "#F97316", label: "Offer Sent" },
+        hired: { color: "#059669", label: "Hired" },
         rejected: { color: "#EF4444", label: "Rejected" },
     }
     return configs[status] || configs.pending
@@ -202,6 +205,29 @@ function HRCandidatesContent() {
         fetchCandidates()
     }, [roleFilter, searchQuery])
 
+    // Helper to update candidate status
+    const updateCandidateStatus = async (candidateId: string, newStatus: string) => {
+        try {
+            // Optimistic update
+            const updatedCandidates = candidates.map(c =>
+                c.id === candidateId ? { ...c, status: newStatus as any } : c
+            )
+            setCandidates(updatedCandidates)
+
+            if (selectedCandidate?.id === candidateId) {
+                setSelectedCandidate({ ...selectedCandidate, status: newStatus as any })
+            }
+
+            const docRef = doc(db, "applications", candidateId)
+            await updateDoc(docRef, { pipelineState: newStatus })
+
+            toast.success(`Candidate status updated to ${getStatusConfig(newStatus).label}`)
+        } catch (error) {
+            console.error("Status update error:", error)
+            toast.error("Failed to update status")
+        }
+    }
+
     const scorePendingCandidates = async () => {
         if (!roleFilter || !jobDescription) {
             toast.error("Please filter by a specific role to run analysis.")
@@ -263,10 +289,13 @@ function HRCandidatesContent() {
 
                 if (candidateIndex !== -1) {
                     const matchScore = Math.round(result.rank_score)
+                    // Auto-Screening / Auto-Rejection Logic
+                    const newStatus = matchScore >= 40 ? 'screened' : 'rejected'
 
                     updatedCandidates[candidateIndex] = {
                         ...updatedCandidates[candidateIndex],
                         overallScore: matchScore,
+                        status: newStatus as any, // Update status
                         resumeAnalysis: {
                             ...updatedCandidates[candidateIndex].resumeAnalysis,
                             skillsFound: result.extracted_data?.skills || [],
@@ -312,7 +341,8 @@ function HRCandidatesContent() {
                     updateDoc(docRef, {
                         "layer2.semanticScore": matchScore / 100,
                         "layer2.extractedData": sanitizedExtractedData,
-                        "layer2.breakdown": result.breakdown || null
+                        "layer2.breakdown": result.breakdown || null,
+                        pipelineState: newStatus // Apply new status to Firestore
                     }).catch(e => console.error("Firestore update failed", e))
                 }
             }
@@ -321,7 +351,7 @@ function HRCandidatesContent() {
             updatedCandidates.sort((a, b) => b.overallScore - a.overallScore)
 
             setCandidates(updatedCandidates)
-            toast.success("Scoring complete! Ready for reranking.")
+            toast.success("Scoring complete! Statuses updated.")
 
         } catch (error) {
             console.error("Scoring Error:", error)
@@ -802,19 +832,69 @@ function HRCandidatesContent() {
                                         </div>
                                     </div>
                                     <div className="flex flex-col items-end gap-2">
-                                        <Badge
-                                            variant="outline"
-                                            className={cn(
-                                                "px-3 py-1 text-sm font-medium",
-                                                selectedCandidate && getStatusConfig(selectedCandidate.status).color === "#10B981" ? "bg-green-500/10 text-green-500 border-green-500/20" :
-                                                    selectedCandidate && getStatusConfig(selectedCandidate.status).color === "#3B82F6" ? "bg-blue-500/10 text-blue-500 border-blue-500/20" :
-                                                        "bg-muted text-muted-foreground"
-                                            )}
-                                        >
-                                            {selectedCandidate && getStatusConfig(selectedCandidate.status).label}
-                                        </Badge>
+                                        <div className="flex items-center gap-2">
+                                            {/* Status Badge */}
+                                            <Badge
+                                                variant="outline"
+                                                className={cn(
+                                                    "px-3 py-1 text-sm font-medium",
+                                                    selectedCandidate && getStatusConfig(selectedCandidate.status).color === "#10B981" ? "bg-green-500/10 text-green-500 border-green-500/20" :
+                                                        selectedCandidate && getStatusConfig(selectedCandidate.status).color === "#3B82F6" ? "bg-blue-500/10 text-blue-500 border-blue-500/20" :
+                                                            "bg-muted text-muted-foreground"
+                                                )}
+                                            >
+                                                {selectedCandidate && getStatusConfig(selectedCandidate.status).label}
+                                            </Badge>
+                                        </div>
+
+                                        {/* Dynamic Action Buttons */}
                                         {selectedCandidate && (
-                                            <div className="text-right">
+                                            <div className="flex gap-2 mt-1">
+                                                {selectedCandidate.status === 'screened' && (
+                                                    <>
+                                                        <Button size="sm" variant="outline" className="h-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                            onClick={() => updateCandidateStatus(selectedCandidate.id, 'shortlisted')}>
+                                                            Shortlist
+                                                        </Button>
+                                                        <Button size="sm" variant="outline" className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                            onClick={() => updateCandidateStatus(selectedCandidate.id, 'rejected')}>
+                                                            Reject
+                                                        </Button>
+                                                    </>
+                                                )}
+                                                {selectedCandidate.status === 'shortlisted' && (
+                                                    <Button size="sm" variant="outline" className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                        onClick={() => updateCandidateStatus(selectedCandidate.id, 'interviewed')}>
+                                                        Mark Interviewed
+                                                    </Button>
+                                                )}
+                                                {selectedCandidate.status === 'interviewed' && (
+                                                    <>
+                                                        <Button size="sm" variant="outline" className="h-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                                            onClick={() => updateCandidateStatus(selectedCandidate.id, 'offer_sent')}>
+                                                            Merge Offer
+                                                        </Button>
+                                                        <Button size="sm" variant="outline" className="h-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                            onClick={() => updateCandidateStatus(selectedCandidate.id, 'hired')}>
+                                                            Hire
+                                                        </Button>
+                                                        <Button size="sm" variant="outline" className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                            onClick={() => updateCandidateStatus(selectedCandidate.id, 'rejected')}>
+                                                            Reject
+                                                        </Button>
+                                                    </>
+                                                )}
+                                                {selectedCandidate.status === 'rejected' && (
+                                                    <Button size="sm" variant="outline" className="h-8 text-muted-foreground hover:text-foreground"
+                                                        onClick={() => updateCandidateStatus(selectedCandidate.id, 'screened')}>
+                                                        Reconsider
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {selectedCandidate && (
+                                            <div className="text-right mt-1">
                                                 <div className="text-xs text-muted-foreground mb-0.5">Match Score</div>
                                                 <div className={cn("text-2xl font-bold", getScoreColor(selectedCandidate.overallScore).text)}>
                                                     {selectedCandidate.overallScore}%
