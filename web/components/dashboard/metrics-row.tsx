@@ -1,72 +1,138 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Users, Target, Video, TrendingUp, TrendingDown, Calendar, Sparkles, Activity } from "lucide-react"
-import { dashboardMetrics } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
-
-const metrics = [
-  {
-    label: "Total Candidates",
-    value: dashboardMetrics.totalCandidates,
-    icon: Users,
-    change: "+12",
-    trend: "up",
-    period: "this week",
-    color: "text-blue-500",
-    bg: "bg-blue-500/10",
-  },
-  {
-    label: "Avg Match Score",
-    value: `${dashboardMetrics.averageMatchScore}%`,
-    icon: Target,
-    change: "+3%",
-    trend: "up",
-    period: "vs last month",
-    color: "text-emerald-500",
-    bg: "bg-emerald-500/10",
-  },
-  {
-    label: "Pending Reviews",
-    value: dashboardMetrics.pendingVideoReviews,
-    icon: Video,
-    change: "+5",
-    trend: "down", // Negative trend because pending is backlog
-    period: "new items",
-    color: "text-amber-500",
-    bg: "bg-amber-500/10",
-  },
-  {
-    label: "Time to Hire",
-    value: "18d",
-    icon: Activity,
-    change: "-2d",
-    trend: "up", // Good trend
-    period: "vs avg",
-    color: "text-purple-500",
-    bg: "bg-purple-500/10",
-  },
-  {
-    label: "Interviews",
-    value: dashboardMetrics.interviewsScheduled,
-    icon: Calendar,
-    change: "+4",
-    trend: "up",
-    period: "scheduled",
-    color: "text-indigo-500",
-    bg: "bg-indigo-500/10",
-  },
-  {
-    label: "New Apps",
-    value: dashboardMetrics.newApplicationsToday,
-    icon: Sparkles,
-    change: "+7",
-    trend: "up",
-    period: "today",
-    color: "text-rose-500",
-    bg: "bg-rose-500/10",
-  },
-]
+import { collection, getDocs, Timestamp } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
 export function MetricsRow() {
+  const [stats, setStats] = useState({
+    totalCandidates: 0,
+    candidatesThisWeek: 0,
+    avgMatchScore: 0,
+    pendingReviews: 0
+  })
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "applications"))
+        const apps = querySnapshot.docs.map(doc => doc.data())
+
+        const totalCandidates = apps.length
+
+        // Candidates this week
+        const now = new Date()
+        const oneWeekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7)
+        const candidatesThisWeek = apps.filter(app => {
+          const submittedAt = app.submittedAt instanceof Timestamp ? app.submittedAt.toDate() : null
+          return submittedAt && submittedAt > oneWeekAgo
+        }).length
+
+        // Avg Match Score
+        let totalScore = 0
+        let scoredCount = 0
+
+        apps.forEach(app => {
+          let score = 0
+          if (app.layer3?.llmScore) {
+            score = app.layer3.llmScore
+            scoredCount++
+          } else if (app.layer2?.semanticScore) {
+            score = app.layer2.semanticScore * 100
+            scoredCount++
+          }
+          totalScore += score
+        })
+
+        const avgMatchScore = scoredCount > 0 ? Math.round(totalScore / scoredCount) : 0
+
+        // Pending Reviews (Logic: status is 'submitted' or 'filtered')
+        // Assuming 'status' or 'pipelineState' field. 
+        // Based on previous files, it's 'pipelineState'.
+        const pendingReviews = apps.filter(app =>
+          app.pipelineState === 'submitted' || app.pipelineState === 'filtered' || app.pipelineState === 'semantic_scored'
+        ).length
+
+        setStats({
+          totalCandidates,
+          candidatesThisWeek,
+          avgMatchScore,
+          pendingReviews
+        })
+
+      } catch (error) {
+        console.error("Error fetching metrics:", error)
+      }
+    }
+    fetchStats()
+  }, [])
+
+  const metrics = [
+    {
+      label: "Total Candidates",
+      value: stats.totalCandidates,
+      icon: Users,
+      change: `+${stats.candidatesThisWeek}`,
+      trend: "up",
+      period: "this week",
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
+    },
+    {
+      label: "Avg Match Score",
+      value: `${stats.avgMatchScore}%`,
+      icon: Target,
+      change: "+3%", // Keeping static for now as historical data is complex
+      trend: "up",
+      period: "vs last month",
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10",
+    },
+    {
+      label: "Pending Reviews",
+      value: stats.pendingReviews,
+      icon: Video,
+      change: "+5",
+      trend: "down",
+      period: "new items",
+      color: "text-amber-500",
+      bg: "bg-amber-500/10",
+    },
+    {
+      label: "Time to Hire",
+      value: "18d",
+      icon: Activity,
+      change: "-2d",
+      trend: "up",
+      period: "vs avg",
+      color: "text-purple-500",
+      bg: "bg-purple-500/10",
+    },
+    {
+      label: "Interviews",
+      value: "4", // Static for now
+      icon: Calendar,
+      change: "+4",
+      trend: "up",
+      period: "scheduled",
+      color: "text-indigo-500",
+      bg: "bg-indigo-500/10",
+    },
+    {
+      label: "New Apps",
+      value: stats.candidatesThisWeek, // Reusing this week count or could be "Today"
+      icon: Sparkles,
+      change: "+7",
+      trend: "up",
+      period: "this week",
+      color: "text-rose-500",
+      bg: "bg-rose-500/10",
+    },
+  ]
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       {metrics.map((metric) => (
