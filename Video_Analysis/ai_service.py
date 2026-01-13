@@ -146,26 +146,53 @@ def analyze_substance(transcript: str) -> Dict[str, Any]:
     )
 
     try:
-        print("🤔 Sending transcript to LLM for substance analysis...")
-        # Using a model that supports JSON mode if possible, or just prompting strongly
-        response = client.chat.completions.create(
-            model="google/gemini-2.0-flash-001", 
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": transcript}
-            ]
-        )
-        
-        content = response.choices[0].message.content
-        # Clean up code blocks if present
-        if "```json" in content:
-            content = content.replace("```json", "").replace("```", "")
-        elif "```" in content:
-            content = content.replace("```", "")
+        scores = {
+            "structure_score": [],
+            "relevance_score": [],
+            "conciseness_score": []
+        }
+        last_summary = "Analysis failed to generate summary."
+
+        for i in range(3):
+            print(f"🤔 Sending transcript to LLM for substance analysis (Run {i+1}/3)...")
+            response = client.chat.completions.create(
+                model="openai/gpt-5-mini", 
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": transcript}
+                ]
+            )
             
-        result = json.loads(content)
-        print("✅ LLM Analysis complete.")
-        return result
+            content = response.choices[0].message.content
+            # Clean up code blocks if present
+            if "```json" in content:
+                content = content.replace("```json", "").replace("```", "")
+            elif "```" in content:
+                content = content.replace("```", "")
+                
+            result = json.loads(content)
+            
+            # Collect scores
+            scores["structure_score"].append(result.get("structure_score", 0))
+            scores["relevance_score"].append(result.get("relevance_score", 0))
+            scores["conciseness_score"].append(result.get("conciseness_score", 0))
+            
+            if i == 2:
+                last_summary = result.get("summary", "")
+
+        # Calculate averages
+        avg_structure = sum(scores["structure_score"]) / 3
+        avg_relevance = sum(scores["relevance_score"]) / 3
+        avg_conciseness = sum(scores["conciseness_score"]) / 3
+        
+        print(f"✅ LLM Analysis complete. Averaged over 3 runs.")
+        
+        return {
+            "structure_score": round(avg_structure, 1),
+            "relevance_score": round(avg_relevance, 1),
+            "conciseness_score": round(avg_conciseness, 1),
+            "summary": last_summary
+        }
         
     except Exception as e:
         print(f"❌ LLM Analysis failed: {e}")
