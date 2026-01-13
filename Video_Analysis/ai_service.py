@@ -1,4 +1,19 @@
 import os
+import json
+from pathlib import Path
+from typing import Dict, Any
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Load env from parent directory (DeepScreen/.env) assuming this script is in DeepScreen/Video_Analysis
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+
+# Initialize OpenRouter Client
+client = OpenAI(
+    base_url=os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1"),
+    api_key=os.getenv("OPENROUTER_API_KEY")
+)
 
 def _load_cuda_libs():
     """
@@ -109,3 +124,54 @@ def transcribe_audio(audio_path: str):
     except Exception as e:
         print(f"❌ Error during transcription: {e}")
         raise e
+
+def analyze_substance(transcript: str) -> Dict[str, Any]:
+    """
+    Analyzes the transcript using LLM for 'Substance' metrics.
+    """
+    system_prompt = (
+        "You are a Technical Interview Coach. Analyze this transcript from a video resume.\n"
+        "**Criteria:**\n"
+        "1. **Structure (STAR Method):** Did they explain the Situation, Task, Action, and Result? Or did they ramble?\n"
+        "2. **Relevance:** Did they actually answer the prompt, or pivot to irrelevant topics?\n"
+        "3. **Conciseness:** Did they get to the point quickly?\n\n"
+        "**Output:** Give a score (0-10) for each and a 1-sentence summary of their communication style.\n"
+        "Return the response in valid JSON format with the following keys:\n"
+        "{\n"
+        "  \"structure_score\": int,\n"
+        "  \"relevance_score\": int,\n"
+        "  \"conciseness_score\": int,\n"
+        "  \"summary\": \"string\"\n"
+        "}"
+    )
+
+    try:
+        print("🤔 Sending transcript to LLM for substance analysis...")
+        # Using a model that supports JSON mode if possible, or just prompting strongly
+        response = client.chat.completions.create(
+            model="google/gemini-2.0-flash-001", 
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": transcript}
+            ]
+        )
+        
+        content = response.choices[0].message.content
+        # Clean up code blocks if present
+        if "```json" in content:
+            content = content.replace("```json", "").replace("```", "")
+        elif "```" in content:
+            content = content.replace("```", "")
+            
+        result = json.loads(content)
+        print("✅ LLM Analysis complete.")
+        return result
+        
+    except Exception as e:
+        print(f"❌ LLM Analysis failed: {e}")
+        return {
+            "structure_score": 0,
+            "relevance_score": 0,
+            "conciseness_score": 0,
+            "summary": f"Analysis failed: {str(e)}"
+        }

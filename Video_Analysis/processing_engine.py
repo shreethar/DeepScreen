@@ -1,5 +1,5 @@
 import video_processor as processor
-import llm_output as ai_service
+import ai_service
 import facial_analysis
 from pathlib import Path
 
@@ -40,9 +40,9 @@ def execute_processing_logic(temp_video_path: Path, temp_dir: str):
     }
 
     if has_audio:
-        # 3. AI Transcription (Whisper CPU)
-        print("Running AI transcription (Whisper CPU)...")
-        ai_service.configure_whisper()
+        # 3. AI Transcription (Whisper)
+        print("Running AI transcription...")
+        ai_service.configure_genai()
         transcript, word_timestamps = ai_service.transcribe_audio(str(audio_path))
         
         # 4. Substance Analysis (LLM)
