@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Users, Clock } from "lucide-react"
-import { collection, getDocs, Timestamp, query, where } from "firebase/firestore"
+import { collection, getDocs, Timestamp, query, where, doc, updateDoc } from "firebase/firestore"
 import { onAuthStateChanged } from "firebase/auth"
 import { auth, db } from "@/lib/firebase"
 
@@ -23,7 +23,7 @@ export default function ApplicantJobsPage() {
     const [jobs, setJobs] = useState<Job[]>([])
     const [loading, setLoading] = useState(true)
     const [user, setUser] = useState<any>(null)
-    const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set())
+    const [applicationsMap, setApplicationsMap] = useState<Record<string, { id: string, status: string }>>({})
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -35,14 +35,18 @@ export default function ApplicantJobsPage() {
     useEffect(() => {
         const fetchAppliedJobs = async () => {
             if (!user) {
-                setAppliedJobIds(new Set())
+                setApplicationsMap({})
                 return
             }
             try {
                 const q = query(collection(db, "applications"), where("applicantId", "==", user.uid))
                 const querySnapshot = await getDocs(q)
-                const ids = new Set(querySnapshot.docs.map(doc => doc.data().jobId))
-                setAppliedJobIds(ids)
+                const map: Record<string, { id: string, status: string }> = {}
+                querySnapshot.docs.forEach(doc => {
+                    const data = doc.data()
+                    map[data.jobId] = { id: doc.id, status: data.pipelineState }
+                })
+                setApplicationsMap(map)
             } catch (error) {
                 console.error("Error fetching applications:", error)
             }
@@ -77,6 +81,37 @@ export default function ApplicantJobsPage() {
         const diffTime = Math.abs(now.getTime() - postedDate.getTime())
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
         return diffDays
+    }
+
+    const handleAcceptOffer = async (applicationId: string, jobId: string) => {
+        try {
+            await updateDoc(doc(db, "applications", applicationId), {
+                pipelineState: "hired"
+            })
+            // Update local state
+            setApplicationsMap(prev => ({
+                ...prev,
+                [jobId]: { ...prev[jobId], status: "hired" }
+            }))
+        } catch (error) {
+            console.error("Error accepting offer:", error)
+        }
+    }
+
+    const handleDeclineOffer = async (applicationId: string, jobId: string) => {
+        if (!confirm("Are you sure you want to decline this offer?")) return
+        try {
+            await updateDoc(doc(db, "applications", applicationId), {
+                pipelineState: "offer_declined"
+            })
+            // Update local state
+            setApplicationsMap(prev => ({
+                ...prev,
+                [jobId]: { ...prev[jobId], status: "offer_declined" }
+            }))
+        } catch (error) {
+            console.error("Error declining offer:", error)
+        }
     }
 
     if (loading) {
@@ -119,10 +154,41 @@ export default function ApplicantJobsPage() {
                                 </span>
                             </div>
                             <div className="mt-4 pt-4 border-t border-border">
-                                {appliedJobIds.has(job.id) ? (
-                                    <Button className="w-full bg-muted text-muted-foreground cursor-not-allowed hover:bg-muted shadow-none" disabled>
-                                        Already Applied
-                                    </Button>
+                                {applicationsMap[job.id] ? (
+                                    applicationsMap[job.id].status === 'offer_sent' ? (
+                                        <div className="space-y-2">
+                                            <div className="p-2 bg-green-500/10 border border-green-500/20 rounded-md text-center">
+                                                <p className="text-sm font-medium text-green-600">Offer Received!</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    className="flex-1 bg-green-600 hover:bg-green-700 text-white shadow-sm h-8 text-xs"
+                                                    onClick={() => handleAcceptOffer(applicationsMap[job.id].id, job.id)}
+                                                >
+                                                    Accept
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 h-8 text-xs shadow-none"
+                                                    onClick={() => handleDeclineOffer(applicationsMap[job.id].id, job.id)}
+                                                >
+                                                    Decline
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : applicationsMap[job.id].status === 'hired' ? (
+                                        <Button className="w-full bg-green-500/10 text-green-600 border border-green-500/20 cursor-default hover:bg-green-500/10 shadow-none font-medium">
+                                            Offer Accepted
+                                        </Button>
+                                    ) : applicationsMap[job.id].status === 'offer_declined' ? (
+                                        <Button className="w-full bg-red-500/10 text-red-600 border border-red-500/20 cursor-default hover:bg-red-500/10 shadow-none font-medium">
+                                            Offer Declined
+                                        </Button>
+                                    ) : (
+                                        <Button className="w-full bg-muted text-muted-foreground cursor-not-allowed hover:bg-muted shadow-none" disabled>
+                                            Already Applied
+                                        </Button>
+                                    )
                                 ) : (
                                     <Button asChild className="w-full bg-primary/10 text-primary hover:bg-primary/20 border-0 shadow-none">
                                         <Link href={`/applicant/jobs/${job.id}/apply`}>Apply Now</Link>

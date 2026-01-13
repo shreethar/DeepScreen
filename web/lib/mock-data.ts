@@ -6,7 +6,7 @@ export interface Candidate {
   role: string
   appliedDate: string
   overallScore: number
-  status: "pending" | "reviewed" | "shortlisted" | "rejected" | "screened" | "interviewed" | "offer_sent" | "hired"
+  status: "pending" | "reviewed" | "shortlisted" | "rejected" | "screened" | "interviewed" | "offer_sent" | "hired" | "interview_scheduled"
   avatar?: string
   resumeUrl?: string
   videoUrl?: string

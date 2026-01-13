@@ -74,7 +74,7 @@ export function ApplicationTrends() {
     }, [])
 
     return (
-        <Card className="col-span-1 md:col-span-2 lg:col-span-4 border-border/50">
+        <Card className="col-span-1 md:col-span-2 lg:col-span-3 border-border/50">
             <CardHeader>
                 <CardTitle>Application Trends</CardTitle>
                 <CardDescription>

@@ -29,8 +29,16 @@ export function Leaderboard() {
   useEffect(() => {
     const fetchTopCandidates = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "applications"))
-        const apps = querySnapshot.docs.map(doc => {
+        const [appsSnapshot, jobsSnapshot] = await Promise.all([
+          getDocs(collection(db, "applications")),
+          getDocs(collection(db, "jobs"))
+        ])
+
+        const jobsMap = new Map(
+          jobsSnapshot.docs.map(doc => [doc.id, doc.data().title])
+        )
+
+        const apps = appsSnapshot.docs.map(doc => {
           const data = doc.data()
           // Calculate overall score (LLM > Semantic > 0)
           let score = 0
@@ -43,7 +51,7 @@ export function Leaderboard() {
           return {
             id: doc.id,
             name: data.applicantName || "Unknown Applicant",
-            role: data.layer1?.extractedData?.role || "Applicant", // Fallback role
+            role: jobsMap.get(data.jobId) || data.layer1?.extractedData?.role || "Applicant",
             overallScore: Math.round(score)
           }
         })

@@ -12,7 +12,8 @@ export function MetricsRow() {
     totalCandidates: 0,
     candidatesThisWeek: 0,
     avgMatchScore: 0,
-    pendingReviews: 0
+    pendingReviews: 0,
+    interviewsNextWeek: 0
   })
 
   useEffect(() => {
@@ -53,14 +54,27 @@ export function MetricsRow() {
         // Assuming 'status' or 'pipelineState' field. 
         // Based on previous files, it's 'pipelineState'.
         const pendingReviews = apps.filter(app =>
-          app.pipelineState === 'submitted' || app.pipelineState === 'filtered' || app.pipelineState === 'semantic_scored'
+          app.pipelineState === 'submitted'
         ).length
+
+        // Interviews scheduled for next week
+        const queryInterviews = await getDocs(collection(db, "interviews"))
+        const oneWeekFromNow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7)
+
+        const interviewsNextWeek = queryInterviews.docs.filter(doc => {
+          const data = doc.data()
+          if (!data.scheduledAt) return false
+          if (data.status === 'completed' || data.status === 'cancelled') return false
+          const scheduledDate = data.scheduledAt.toDate()
+          return scheduledDate >= now && scheduledDate <= oneWeekFromNow
+        }).length
 
         setStats({
           totalCandidates,
           candidatesThisWeek,
           avgMatchScore,
-          pendingReviews
+          pendingReviews,
+          interviewsNextWeek
         })
 
       } catch (error) {
@@ -113,28 +127,18 @@ export function MetricsRow() {
     },
     {
       label: "Interviews",
-      value: "4", // Static for now
+      value: stats.interviewsNextWeek,
       icon: Calendar,
-      change: "+4",
+      change: "Upcoming",
       trend: "up",
-      period: "scheduled",
+      period: "scheduled this week",
       color: "text-indigo-500",
       bg: "bg-indigo-500/10",
-    },
-    {
-      label: "New Apps",
-      value: stats.candidatesThisWeek, // Reusing this week count or could be "Today"
-      icon: Sparkles,
-      change: "+7",
-      trend: "up",
-      period: "this week",
-      color: "text-rose-500",
-      bg: "bg-rose-500/10",
     },
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       {metrics.map((metric) => (
         <Card key={metric.label} className="border-border/50 bg-card hover:shadow-sm transition-all hover:bg-muted/20">
           <CardContent className="p-4 flex flex-col justify-between h-full">

@@ -41,6 +41,9 @@ function getStatusConfig(status: string) {
         offer_sent: { color: "#F97316", label: "Offer Sent" },
         hired: { color: "#059669", label: "Hired" },
         rejected: { color: "#EF4444", label: "Rejected" },
+        offer_declined: { color: "#EF4444", label: "Declined" },
+        interview_scheduled: { color: "#8B5CF6", label: "Interview Scheduled" },
+        interview_completed: { color: "#10B981", label: "Interview Completed" },
     }
     return configs[status] || configs.pending
 }
@@ -122,6 +125,7 @@ function HRCandidatesContent() {
                         phone: data.applicantPhone || "",
                         overallScore: data.layer2?.semanticScore ? Math.round(data.layer2.semanticScore * 100) : 0,
                         status: (data.pipelineState === 'submitted' ? 'pending' : data.pipelineState) as any,
+                        reasoning: data.layer2?.reasoning || null,
                         // Default/Placeholder values for missing fields to match Interface
                         location: "Remote",
                         appliedDate: data.submittedAt ? data.submittedAt.toDate().toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -191,6 +195,9 @@ function HRCandidatesContent() {
                         c.email.toLowerCase().includes(searchQuery.toLowerCase())
                     )
                     : fetchedCandidates
+
+                // Sort by overallScore descending
+                finalCandidates.sort((a, b) => b.overallScore - a.overallScore)
 
                 setCandidates(finalCandidates)
 
@@ -289,13 +296,14 @@ function HRCandidatesContent() {
 
                 if (candidateIndex !== -1) {
                     const matchScore = Math.round(result.rank_score)
-                    // Auto-Screening / Auto-Rejection Logic
-                    const newStatus = matchScore >= 40 ? 'screened' : 'rejected'
+                    // Auto-Screening / Auto-Rejection Logic based on API Status
+                    const newStatus = result.status === 'REJECTED' ? 'rejected' : 'screened'
 
                     updatedCandidates[candidateIndex] = {
                         ...updatedCandidates[candidateIndex],
                         overallScore: matchScore,
                         status: newStatus as any, // Update status
+                        reasoning: result.logic_reason || null, // Update reasoning
                         resumeAnalysis: {
                             ...updatedCandidates[candidateIndex].resumeAnalysis,
                             skillsFound: result.extracted_data?.skills || [],
@@ -342,6 +350,7 @@ function HRCandidatesContent() {
                         "layer2.semanticScore": matchScore / 100,
                         "layer2.extractedData": sanitizedExtractedData,
                         "layer2.breakdown": result.breakdown || null,
+                        "layer2.reasoning": result.logic_reason || null,
                         pipelineState: newStatus // Apply new status to Firestore
                     }).catch(e => console.error("Firestore update failed", e))
                 }
@@ -429,7 +438,7 @@ function HRCandidatesContent() {
                 const candidateIndex = updatedCandidates.findIndex(c => c.id === candidateId)
 
                 if (candidateIndex !== -1) {
-                    const apiStatus = result.status === 'QUALIFIED' ? 'shortlisted' : 'rejected'
+                    const apiStatus = result.status === 'QUALIFIED' ? 'screened' : 'rejected'
 
                     updatedCandidates[candidateIndex] = {
                         ...updatedCandidates[candidateIndex],
@@ -829,8 +838,34 @@ function HRCandidatesContent() {
                                                     {selectedCandidate?.phone}
                                                 </div>
                                             </div>
+
+                                            <div className="mt-4 flex flex-wrap gap-2">
+                                                <Badge variant="outline" className="bg-muted text-muted-foreground">
+                                                    {selectedCandidate?.resumeAnalysis?.experienceYears || 0} YOE
+                                                </Badge>
+                                                <Badge variant="outline" className="bg-muted text-muted-foreground">
+                                                    {selectedCandidate?.location}
+                                                </Badge>
+                                                <Badge variant="outline" className="bg-muted text-muted-foreground">
+                                                    Applied {selectedCandidate?.appliedDate}
+                                                </Badge>
+                                            </div>
+
+                                            {/* Rejection Reason Alert */}
+                                            {selectedCandidate?.status === 'rejected' && (selectedCandidate as any)?.reasoning && (
+                                                <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 flex items-start gap-3">
+                                                    <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
+                                                    <div>
+                                                        <h4 className="text-sm font-semibold text-red-700">Application Rejected</h4>
+                                                        <p className="text-sm text-red-600/90 mt-1">
+                                                            {(selectedCandidate as any).reasoning}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
+
                                     <div className="flex flex-col items-end gap-2">
                                         <div className="flex items-center gap-2">
                                             {/* Status Badge */}
@@ -964,7 +999,7 @@ function HRCandidatesContent() {
                                                                         </Badge>
                                                                     </div>
                                                                     <div className="flex flex-wrap gap-2">
-                                                                        {(selectedCandidate.resumeAnalysis.extractedData?.skills || selectedCandidate.resumeAnalysis.skillsFound).map(skill => (
+                                                                        {Array.from(new Set(selectedCandidate.resumeAnalysis.extractedData?.skills || selectedCandidate.resumeAnalysis.skillsFound || [])).map(skill => (
                                                                             <Badge key={skill} variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">
                                                                                 {skill}
                                                                             </Badge>
@@ -1287,10 +1322,11 @@ function HRCandidatesContent() {
                                 </div>
                             )}
                         </DialogContent>
-                    </Dialog>
+                    </Dialog >
                 </>
-            )}
-        </div>
+            )
+            }
+        </div >
     )
 }
 
