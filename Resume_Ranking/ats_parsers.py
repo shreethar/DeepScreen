@@ -31,6 +31,7 @@ RESUME_SCHEMA = {
                     "title": {"type": ["string", "null"]},
                     "company": {"type": ["string", "null"]},
                     "date_range": {"type": ["string", "null"]},
+                    "duration": {"type": ["number", "null"]},
                     "description": {"type": ["string", "null"]}
                 },
                 "required": ["title"]
@@ -89,7 +90,19 @@ def call_llm_with_retry(messages, schema):
     for _ in range(3):
         try:
             res = client.chat.completions.create(model=MODEL, messages=messages, response_format={"type": "json_object"}, temperature=0)
-            data = json.loads(res.choices[0].message.content)
+            content = res.choices[0].message.content
+            
+            # Cleaning Logic for common LLM JSON errors
+            content = content.replace("\\", "\\\\").replace("\\\\\"", "\\\"") # Escape backslashes but keep escaped quotes
+            
+            try:
+                data = json.loads(content, strict=False)
+            except json.JSONDecodeError:
+                # Fallback: aggressive cleaning
+                import re
+                content = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', content)
+                data = json.loads(content, strict=False)
+
             validate(instance=data, schema=schema)
             return enforce_defaults(data)
         except RateLimitError: time.sleep(2)
@@ -129,12 +142,23 @@ def parse_resume(text: str, jd_context: str, links: List[str]) -> Dict:
         "You are a Technical Talent Auditor. Extract resume details into JSON. "
         "SKILL INFERENCE: If a technology (e.g. FastAPI) is in projects/experience but missing from skills array, you MUST add it to 'skills'. "
         "RULES FOR DATES: Convert ALL dates to 'MonthName YYYY - MonthName YYYY'. "
-        "If currently working, use 'Present'. Do NOT calculate duration numbers. "
+        "If currently working, use 'Present'. "
         "RULES FOR EDUCATION: Split 'degree' (e.g. Bachelor's) and 'course' (e.g. Computer Science). "
+        "If a job mentions either of 2 degrees (e.g. Bachelor's or Master's), return the lowest degree. (e.g. in this case Bachelor's)"
         "Use detected links to enrich 'repo_link', 'live_link', or 'portfolio_url' if applicable. Detected links: " + str(links) + ". "
-        "For experience duration, calculate in years (float). "
+        "CALCULATE DURATION: For each experience entry, calculate the duration in years (float) locally and populate the 'duration' field. "
         "If portfolio URL is not found, return \"\". "
     )
     msg = [{"role": "system", "content": system_instr},
            {"role": "user", "content": f"JD Context: {jd_context}\n\nResume: {text}\n\nSchema: {json.dumps(RESUME_SCHEMA)}"}]
-    return call_llm_with_retry(msg, RESUME_SCHEMA)
+    
+    data = call_llm_with_retry(msg, RESUME_SCHEMA)
+    
+    # Post-process: Calculate durations
+    if data and "experience" in data:
+        from utils import calculate_years_from_ranges
+        for exp in data["experience"]:
+            # calculate_years_from_ranges expects a list, so we wrap the single item
+            exp["duration"] = calculate_years_from_ranges([exp])
+            
+    return data
