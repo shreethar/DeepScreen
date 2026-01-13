@@ -8,7 +8,7 @@ from openai import OpenAI, RateLimitError
 from dotenv import load_dotenv
 from faster_whisper import WhisperModel
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 # Initialize OpenRouter Client
