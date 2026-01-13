@@ -480,7 +480,8 @@ function HRCandidatesContent() {
                     blinkRate: rawResult.data.blink_rate_bpm,
                     smilePercentage: rawResult.data.smile_percentage,
                     stressPercentage: rawResult.data.stress_percentage,
-                    headStability: rawResult.data.head_stability
+                    headStability: rawResult.data.head_stability,
+                    substance: rawResult.data.substance_details || null
                 }
             }
 
@@ -548,7 +549,8 @@ function HRCandidatesContent() {
             experience: extractedData.experience?.map(e => ({
                 title: e.title,
                 duration: typeof e.duration === 'string' ? parseFloat(e.duration) : (e.duration || 0),
-                description: e.focus || e.description || "" // Handle focus/description mapping
+                //description: e.focus || e.description || "" // Handle focus/description mapping
+                description: e.focus || "" // Handle focus/description mapping
             })) || [],
             education: extractedData.education?.map(e => ({
                 degree: e.degree,
@@ -961,18 +963,35 @@ function HRCandidatesContent() {
                                                                     </div>
 
                                                                     <div className="grid grid-cols-2 gap-3 text-sm">
+                                                                        {/* Row 1: Structure & Relevance */}
+                                                                        <div className="p-3 bg-muted/30 rounded-lg">
+                                                                            <div className="text-xs text-muted-foreground mb-1">Structure Score</div>
+                                                                            <div className="font-medium">
+                                                                                {(selectedCandidate.videoAnalysis as any).details.substance?.structure_score ?? "-"}/10
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="p-3 bg-muted/30 rounded-lg">
+                                                                            <div className="text-xs text-muted-foreground mb-1">Relevance Score</div>
+                                                                            <div className="font-medium">
+                                                                                {(selectedCandidate.videoAnalysis as any).details.substance?.relevance_score ?? "-"}/10
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Row 2: Conciseness & Speaking Rate */}
+                                                                        <div className="p-3 bg-muted/30 rounded-lg">
+                                                                            <div className="text-xs text-muted-foreground mb-1">Conciseness Score</div>
+                                                                            <div className="font-medium">
+                                                                                {(selectedCandidate.videoAnalysis as any).details.substance?.conciseness_score ?? "-"}/10
+                                                                            </div>
+                                                                        </div>
                                                                         <div className="p-3 bg-muted/30 rounded-lg">
                                                                             <div className="text-xs text-muted-foreground mb-1">Speaking Rate</div>
                                                                             <div className="font-medium">
                                                                                 {(selectedCandidate.videoAnalysis as any).details.speakingRate?.toFixed(0)} WPM
                                                                             </div>
                                                                         </div>
-                                                                        <div className="p-3 bg-muted/30 rounded-lg">
-                                                                            <div className="text-xs text-muted-foreground mb-1">Eye Contact</div>
-                                                                            <div className="font-medium">
-                                                                                {(selectedCandidate.videoAnalysis as any).details.eyeContact?.toFixed(0)}%
-                                                                            </div>
-                                                                        </div>
+
+                                                                        {/* Row 3: Filler Count & Eye Contact */}
                                                                         <div className="p-3 bg-muted/30 rounded-lg">
                                                                             <div className="text-xs text-muted-foreground mb-1">Filler Count</div>
                                                                             <div className="font-medium">
@@ -980,9 +999,9 @@ function HRCandidatesContent() {
                                                                             </div>
                                                                         </div>
                                                                         <div className="p-3 bg-muted/30 rounded-lg">
-                                                                            <div className="text-xs text-muted-foreground mb-1">Liveness Check</div>
-                                                                            <div className={cn("font-medium", (selectedCandidate.videoAnalysis as any).details.liveness === "PASS" ? "text-green-600" : "text-red-500")}>
-                                                                                {(selectedCandidate.videoAnalysis as any).details.liveness}
+                                                                            <div className="text-xs text-muted-foreground mb-1">Eye Contact</div>
+                                                                            <div className="font-medium">
+                                                                                {(selectedCandidate.videoAnalysis as any).details.eyeContact?.toFixed(0)}%
                                                                             </div>
                                                                         </div>
                                                                     </div>
