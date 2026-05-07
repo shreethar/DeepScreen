@@ -43,8 +43,9 @@
 <details>
 <summary><b>3. Candidate Pipeline & Ranking</b></summary>
 <br>
-<img src="images/Recruiter-CandidateList.jpg" alt="Candidate List" width="100%">
-<i>Intelligent candidate list ranked by semantic similarity and a custom <b>LLM Merge-Sort algorithm</b>. Rather than relying on static keyword scores, the AI dynamically compares two candidates head-to-head, evaluating their relative strengths against the Job Description to produce a highly accurate, human-like final ranking.</i>
+<img src="images/Recruiter-CandidateList.jpg" alt="Candidate List" width="100%" style="margin-bottom: 10px;">
+<img src="images/Merge%20Sort.jpg" alt="Merge Sort Algorithm" width="100%">
+<i>Intelligent candidate list ranked via a custom <b>LLM Merge-Sort algorithm</b>. Rather than relying on static keyword scores, the AI dynamically compares two candidates head-to-head against the Job Description. By utilizing a Divide and Conquer Merge Sort, we achieve a time complexity of <b>O(n log n)</b> instead of the typical O(n²) required by Bubble Sort. This drastically reduces the number of expensive LLM API calls while guaranteeing a highly accurate, human-like relative ranking (with an acceptable space complexity tradeoff of O(n)).</i>
 </details>
 
 <details>
@@ -64,9 +65,10 @@
 <details>
 <summary><b>6. Autonomous Web & Portfolio Audit</b></summary>
 <br>
+<img src="images/AI%20Portfolio%20Auditor%20Anatomy.jpg" alt="Anatomy of an AI Resume Auditor" width="100%" style="margin-bottom: 10px;">
 <img src="images/Recruiter-CandidateDetailsPortfolio1.jpg" alt="Portfolio Analysis 1" width="100%" style="margin-bottom: 10px;">
 <img src="images/Recruiter-CandidateDetailsPortfolio2.jpg" alt="Portfolio Analysis 2" width="100%">
-<i>The Scraper Agent audits candidate GitHubs and portfolios, performing live context checks against their resume claims.</i>
+<i>The Scraper Agent acts as an autonomous auditor consisting of a Brain, Hands & Eyes, and a Nervous System orchestration layer. It actively crawls candidate GitHubs and portfolios, performing a 5-step live context check to classify resume claims as True, Exaggerated, or Fabricated.</i>
 </details>
 
 ## 🏗️ Architecture
