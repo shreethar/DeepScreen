@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="images/Logo%20Rectangle.jpg" alt="DeepScreen Logo" width="150" style="border-radius: 10px; margin-bottom: 20px;" />
+  <img src="images/Logo%20Square.jpg" alt="DeepScreen Logo" width="150" style="border-radius: 10px; margin-bottom: 20px;" />
   <h1>🚀 DeepScreen</h1>
   <p><strong>The AI-Native, Multi-Agent Recruitment & ATS Platform</strong></p>
 
@@ -34,14 +34,36 @@
 </details>
 
 <details>
-<summary><b>2. Candidate AI Assessment</b></summary>
+<summary><b>2. Candidate Pipeline & Ranking</b></summary>
+<br>
+<img src="images/Recruiter-CandidateList.jpg" alt="Candidate List" width="100%">
+<i>Intelligent candidate list ranked by semantic similarity and LLM merge-sort algorithms.</i>
+</details>
+
+<details>
+<summary><b>3. AI Video Interview Analysis</b></summary>
+<br>
+<img src="images/Recruiter-CandidateDetailsVideo.jpg" alt="Video Analysis" width="100%">
+<i>Detailed biometric and transcript analysis yielding scores for structure, conciseness, and engagement.</i>
+</details>
+
+<details>
+<summary><b>4. Autonomous Web & Portfolio Audit</b></summary>
+<br>
+<img src="images/Recruiter-CandidateDetailsPortfolio1.jpg" alt="Portfolio Analysis 1" width="100%" style="margin-bottom: 10px;">
+<img src="images/Recruiter-CandidateDetailsPortfolio2.jpg" alt="Portfolio Analysis 2" width="100%">
+<i>The Scraper Agent audits candidate GitHubs and portfolios, performing live context checks against their resume claims.</i>
+</details>
+
+<details>
+<summary><b>5. Candidate Profile Overview</b></summary>
 <br>
 <img src="images/Recruiter-CandidateDetailsOverview.jpg" alt="Candidate Details" width="100%">
 <i>Deep AI-driven insights detailing skill matches, experience extraction, and overall suitability.</i>
 </details>
 
 <details>
-<summary><b>3. Active Job Pipeline</b></summary>
+<summary><b>6. Active Job Management</b></summary>
 <br>
 <img src="images/Recruiter-JobList.jpg" alt="Job List" width="100%">
 <i>Effortlessly manage active job listings and monitor the influx of candidates per position.</i>
@@ -49,19 +71,11 @@
 
 ## 🏗️ Architecture
 
-DeepScreen operates on a decoupled microservices architecture, allowing each AI agent to scale independently.
+DeepScreen operates on a decoupled microservices architecture, utilizing four parallel AI analysis engines to evaluate candidates across multiple dimensions. All insights are aggregated into a final weighted score displayed on the employer dashboard.
 
-```mermaid
-graph TD
-    UI[Next.js Web Dashboard] <--> |REST/Firebase| DB[(Firebase Firestore)]
-    UI <--> |API :8002| RR[Resume Ranking Service]
-    UI <--> |API :8001| VA[Video Analysis Service]
-    UI <--> |CLI/Trigger| SA[Scraper Agent]
-
-    RR --> |Extract & Score| PDF[Resumes / JDs]
-    VA --> |MediaPipe| VID[Video Interviews]
-    SA --> |Graph Crawler| WEB[Web Portfolios]
-```
+<div align="center">
+  <img src="images/SystemArchitecture.jpg" alt="DeepScreen System Architecture Pipeline" width="100%" style="border-radius: 10px; margin-top: 10px; margin-bottom: 20px;">
+</div>
 
 ## 📂 Project Structure
 
