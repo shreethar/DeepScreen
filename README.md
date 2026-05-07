@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="images/Logo%20Rectangle.jpg" alt="DeepScreen Logo" width="150" style="border-radius: 10px; margin-bottom: 20px;" />
   <h1>🚀 DeepScreen</h1>
   <p><strong>The AI-Native, Multi-Agent Recruitment & ATS Platform</strong></p>
 
@@ -22,6 +23,29 @@
 - 🎥 **Video Behavioral Analysis**: Analyzes facial landmarks, engagement, and communication skills during video interviews using MediaPipe and AI.
 - 📊 **Unified HR Dashboard**: A beautiful, real-time Next.js 16 interface with Radix UI, managed via Firebase.
 - ⚡ **Microservice Architecture**: Fully decoupled FastAPI backends for processing scalability.
+
+## 📸 UI Showcase
+
+<details open>
+<summary><b>1. HR Dashboard Analytics</b></summary>
+<br>
+<img src="images/Recruiter-Dashboard1.jpg" alt="HR Dashboard Overview" width="100%">
+<i>Real-time analytics showing total candidates, match scores, and recruitment funnel progression.</i>
+</details>
+
+<details>
+<summary><b>2. Candidate AI Assessment</b></summary>
+<br>
+<img src="images/Recruiter-CandidateDetailsOverview.jpg" alt="Candidate Details" width="100%">
+<i>Deep AI-driven insights detailing skill matches, experience extraction, and overall suitability.</i>
+</details>
+
+<details>
+<summary><b>3. Active Job Pipeline</b></summary>
+<br>
+<img src="images/Recruiter-JobList.jpg" alt="Job List" width="100%">
+<i>Effortlessly manage active job listings and monitor the influx of candidates per position.</i>
+</details>
 
 ## 🏗️ Architecture
 
