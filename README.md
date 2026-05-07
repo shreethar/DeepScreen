@@ -131,16 +131,16 @@ DeepScreen/
 - Firebase Project configured
 - `uv` Package Manager (Recommended for Python)
 
-### 1. Resume Ranking Service (Backend)
+### 1. Scraper Agent Service (Backend)
 
-Navigate to the `Resume_Ranking` directory and start the FastAPI service:
+Navigate to the `Scraper_Agent` directory and start the web crawling API:
 
 ```bash
-cd Resume_Ranking
+cd Scraper_Agent
 # Install dependencies from root
 pip install -r ../requirements.txt
 # Run the server
-uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+uvicorn api:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 ### 2. Video Analysis Service (Backend)
@@ -153,7 +153,17 @@ cd Video_Analysis
 uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
-### 3. Next.js Dashboard (Frontend)
+### 3. Resume Ranking Service (Backend)
+
+Navigate to the `Resume_Ranking` directory and start the FastAPI service:
+
+```bash
+cd Resume_Ranking
+# Run the server
+uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+```
+
+### 4. Next.js Dashboard (Frontend)
 
 Navigate to the `web` directory to boot up the HR dashboard:
 
