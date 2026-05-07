@@ -194,6 +194,36 @@ DeepScreen relies on external APIs. We have provided example environment files t
 
 *Note: For Firebase Admin SDK access in Python, ensure `serviceAccountKey.json` is placed in the root directory.*
 
+## 🗄️ Firestore Database Schema
+
+To ensure the Next.js frontend and Python AI backends sync perfectly, set up your Firebase Firestore with the following core collections:
+
+### 1. `jobs` (Collection)
+Stores active job listings created by the HR team.
+- `title` (string)
+- `description` (string)
+- `status` (string) - e.g., "open", "closed"
+- `recruiterId` (string) - User ID of the recruiter
+- `applicantCount` (number)
+- `maxApplicant` (number)
+- `createdAt` (timestamp)
+
+### 2. `applications` (Collection)
+The core collection where candidate submissions are tracked and progressively updated by the AI processing pipeline.
+- `jobId` (string) - Reference to the job
+- `applicantId` (string) - User ID of the candidate
+- `applicantName`, `applicantEmail`, `applicantPhone` (string)
+- `resumeUrl` (string) - Firebase Storage URL to the uploaded PDF
+- `visumeUrl` (string) - Firebase Storage URL to the uploaded video
+- `pipelineState` (string) - Tracks processing status: `submitted` → `filtered` → `semantic_scored` → `llm_ranked`
+- **`layer1` (map)**: Hard-constraint ATS filtering results (`qualified: boolean`, `reasons: array`)
+- **`layer2` (map)**: Semantic matching results (`semanticScore: number`, `semanticRank: number`)
+- **`layer3` (map)**: LLM Merge Sort results (`llmScore: number`, `finalRank: number`, `explanation: string`)
+- `submittedAt` (timestamp)
+
+### 3. `interviews` (Collection)
+Tracks scheduled interviews for candidates who successfully pass the AI screening phase.
+
 ## 🛡️ Security & Privacy
 
 DeepScreen processes sensitive PII (Personally Identifiable Information). 
