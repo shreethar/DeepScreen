@@ -14,13 +14,9 @@ web/.env.local
 serviceAccountKey.json
 
 # =========================
-# Python (Video_Analysis/)
+# Python
 # =========================
-Video_Analysis/__pycache__/
-Video_Analysis/**/*.pyc
-
-Resume_Ranking/__pycache__/
-Resume_Ranking/**/*.pyc
-
-Scraper_Agent/__pycache__/
-Scraper_Agent/**/*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+Scraper_Agent/output/

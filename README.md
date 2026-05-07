@@ -103,19 +103,20 @@ The application will be accessible at `http://localhost:3000`.
 
 ## 🔐 Configuration & Environment Variables
 
-DeepScreen relies on external APIs. Ensure the following environment variables are set up correctly.
+DeepScreen relies on external APIs. We have provided example environment files that you can use as a template.
 
-**`.env` (Root Level for Python Backends)**
-```env
-OPENROUTER_API_KEY="your_openrouter_key"
-```
+1. **Root Backend Configuration**:
+   Copy the `.env.example` file in the root directory to `.env` and fill in your keys:
+   ```bash
+   cp .env.example .env
+   ```
 
-**`web/.env.local` (Frontend)**
-```env
-NEXT_PUBLIC_FIREBASE_API_KEY="your_api_key"
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your_domain"
-NEXT_PUBLIC_FIREBASE_PROJECT_ID="your_project_id"
-```
+2. **Frontend Configuration**:
+   Navigate to the `web` directory, copy `.env.local.example` to `.env.local`, and fill in your Firebase details:
+   ```bash
+   cd web
+   cp .env.local.example .env.local
+   ```
 
 *Note: For Firebase Admin SDK access in Python, ensure `serviceAccountKey.json` is placed in the root directory.*
 

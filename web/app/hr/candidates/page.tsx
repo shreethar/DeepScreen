@@ -496,7 +496,7 @@ function HRCandidatesContent() {
             formData.append("file", videoBlob, "interview_video.mp4")
 
             // 3. Call Analysis API
-            const response = await fetch("http://localhost:8001/analyze", {
+            const response = await fetch("http://127.0.0.1:8001/analyze", {
                 method: "POST",
                 body: formData,
             })
