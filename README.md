@@ -34,39 +34,39 @@
 </details>
 
 <details>
-<summary><b>2. Candidate Pipeline & Ranking</b></summary>
+<summary><b>2. Active Job Management</b></summary>
+<br>
+<img src="images/Recruiter-JobList.jpg" alt="Job List" width="100%">
+<i>Effortlessly manage active job listings and monitor the influx of candidates per position.</i>
+</details>
+
+<details>
+<summary><b>3. Candidate Pipeline & Ranking</b></summary>
 <br>
 <img src="images/Recruiter-CandidateList.jpg" alt="Candidate List" width="100%">
-<i>Intelligent candidate list ranked by semantic similarity and LLM merge-sort algorithms.</i>
+<i>Intelligent candidate list ranked by semantic similarity and a custom <b>LLM Merge-Sort algorithm</b>. Rather than relying on static keyword scores, the AI dynamically compares two candidates head-to-head, evaluating their relative strengths against the Job Description to produce a highly accurate, human-like final ranking.</i>
 </details>
 
 <details>
-<summary><b>3. AI Video Interview Analysis</b></summary>
-<br>
-<img src="images/Recruiter-CandidateDetailsVideo.jpg" alt="Video Analysis" width="100%">
-<i>Detailed biometric and transcript analysis yielding scores for structure, conciseness, and engagement.</i>
-</details>
-
-<details>
-<summary><b>4. Autonomous Web & Portfolio Audit</b></summary>
-<br>
-<img src="images/Recruiter-CandidateDetailsPortfolio1.jpg" alt="Portfolio Analysis 1" width="100%" style="margin-bottom: 10px;">
-<img src="images/Recruiter-CandidateDetailsPortfolio2.jpg" alt="Portfolio Analysis 2" width="100%">
-<i>The Scraper Agent audits candidate GitHubs and portfolios, performing live context checks against their resume claims.</i>
-</details>
-
-<details>
-<summary><b>5. Candidate Profile Overview</b></summary>
+<summary><b>4. Candidate Profile Overview</b></summary>
 <br>
 <img src="images/Recruiter-CandidateDetailsOverview.jpg" alt="Candidate Details" width="100%">
 <i>Deep AI-driven insights detailing skill matches, experience extraction, and overall suitability.</i>
 </details>
 
 <details>
-<summary><b>6. Active Job Management</b></summary>
+<summary><b>5. AI Video Interview Analysis</b></summary>
 <br>
-<img src="images/Recruiter-JobList.jpg" alt="Job List" width="100%">
-<i>Effortlessly manage active job listings and monitor the influx of candidates per position.</i>
+<img src="images/Recruiter-CandidateDetailsVideo.jpg" alt="Video Analysis" width="100%">
+<i>Detailed biometric and transcript analysis yielding scores for structure, conciseness, and engagement.</i>
+</details>
+
+<details>
+<summary><b>6. Autonomous Web & Portfolio Audit</b></summary>
+<br>
+<img src="images/Recruiter-CandidateDetailsPortfolio1.jpg" alt="Portfolio Analysis 1" width="100%" style="margin-bottom: 10px;">
+<img src="images/Recruiter-CandidateDetailsPortfolio2.jpg" alt="Portfolio Analysis 2" width="100%">
+<i>The Scraper Agent audits candidate GitHubs and portfolios, performing live context checks against their resume claims.</i>
 </details>
 
 ## 🏗️ Architecture
