@@ -79,6 +79,30 @@ DeepScreen operates on a decoupled microservices architecture, utilizing four pa
   <img src="images/SystemArchitecture.jpg" alt="DeepScreen System Architecture Pipeline" width="100%" style="border-radius: 10px; margin-top: 10px; margin-bottom: 20px;">
 </div>
 
+## 💻 Tech Stack
+
+DeepScreen is powered by a robust stack of modern frameworks and AI libraries:
+
+### Frontend
+- **Framework**: Next.js 16, React 19, TypeScript
+- **Styling**: Tailwind CSS, Radix UI
+- **Backend-as-a-Service**: Firebase (Auth, Firestore, Storage)
+
+### Backend Services (Python 3.12)
+- **API Framework**: FastAPI, Uvicorn, Pydantic
+- **Database ORMs/Drivers**: SQLAlchemy, PyMongo
+- **Document Parsing**: PyMuPDF
+- **Web Scraping**: Playwright (`playwright-stealth`)
+
+### AI & Machine Learning
+- **LLM Orchestration**: LangChain, LangGraph
+- **Models & Inference**: OpenAI, Ollama, HuggingFace, Transformers
+- **Embeddings**: Sentence-Transformers
+- **Audio Processing**: Faster-Whisper
+- **Computer Vision**: OpenCV, MediaPipe
+- **Data Science**: NumPy, Pandas, Pillow, Scikit-Learn, SciPy
+- **Deep Learning Framework**: PyTorch (`torch`, `torchvision`)
+
 ## 📂 Project Structure
 
 ```text
